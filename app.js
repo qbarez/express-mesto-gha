@@ -1,15 +1,15 @@
-/* eslint-disable no-console */
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const cardsRoutes = require('./routes/cards');
 const usersRoutes = require('./routes/users');
+const {
+  NOT_FOUND_STATUS_CODE,
+} = require('./utils/responseStatusCode');
 
 const { PORT = 3000 } = process.env;
 const app = express();
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
   .then(() => {
     console.log('db connected');
@@ -29,6 +29,10 @@ app.use((req, res, next) => {
 app.use('/', cardsRoutes);
 
 app.use('/', usersRoutes);
+
+app.use('*', (req, res) => {
+  NOT_FOUND_STATUS_CODE(res, `Запрашиваемый ресурс ${req.path} не найден.`);
+});
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
