@@ -12,10 +12,10 @@ const app = express();
 app.use(express.json());
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
   .then(() => {
-    console.log('db connected');
+    console.warn('db connected');
   })
   .catch(() => {
-    console.log('db connection error');
+    console.error('db connection error');
   });
 
 app.use((req, res, next) => {
@@ -26,14 +26,14 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/', cardsRoutes);
+app.use('/cards', cardsRoutes);
 
-app.use('/', usersRoutes);
+app.use('/users', usersRoutes);
 
 app.use('*', (req, res) => {
   NOT_FOUND_STATUS_CODE(res, `Запрашиваемый ресурс ${req.path} не найден.`);
 });
 
 app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`);
+  console.warn(`App listening on port ${PORT}`);
 });
