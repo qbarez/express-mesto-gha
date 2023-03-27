@@ -16,14 +16,17 @@ const getUsers = (req, res) => {
 const getUserById = (req, res) => {
   User.findById(req.params._id)
     .then((user) => {
-      if (user) {
-        OK_STATUS_CODE(res, user);
-      } else {
+      if (!user) {
         NOT_FOUND_STATUS_CODE(res, 'Запрашиваемый пользователь не найден');
       }
+      return OK_STATUS_CODE(res, user);
     })
     .catch((err) => {
-      SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
+      if (err.name === 'CastError') {
+        BAD_REQUEST_ERROR_CODE(res, 'Некорректный id пользователя');
+      } else {
+        SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
+      }
     });
 };
 

@@ -18,7 +18,7 @@ const getCards = (req, res) => {
     });
 };
 
-const createCard = (req, res) => {
+function createCard(req, res) {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card.create({ name, link, owner })
@@ -28,10 +28,11 @@ const createCard = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         BAD_REQUEST_ERROR_CODE(res, `Переданы некорректные данные: ${err}`);
+        return;
       }
       SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
     });
-};
+}
 
 const deleteCard = (req, res) => {
   const id = req.params.cardId;
@@ -39,12 +40,14 @@ const deleteCard = (req, res) => {
     .then((card) => {
       if (!card) {
         NOT_FOUND_STATUS_CODE(res, `Карточки с таким id ${id} не найдено`);
+        return;
       }
       OK_STATUS_CODE(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         BAD_REQUEST_ERROR_CODE(res, `Переданы некорректные данные: ${err}`);
+        return;
       }
       SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
     });
@@ -58,13 +61,18 @@ const likeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        NOT_FOUND_STATUS_CODE(res, `Карточки с таким id ${req.params.cardId} не найдено`);
+        NOT_FOUND_STATUS_CODE(
+          res,
+          `Карточки с таким id ${req.params.cardId} не найдено`,
+        );
+        return;
       }
       OK_STATUS_CODE(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         BAD_REQUEST_ERROR_CODE(res, `Переданы некорректные данные: ${err}`);
+        return;
       }
       SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
     });
@@ -78,13 +86,18 @@ const dislikeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        NOT_FOUND_STATUS_CODE(res, `Карточки с таким id ${req.params.cardId} не найдено`);
+        NOT_FOUND_STATUS_CODE(
+          res,
+          `Карточки с таким id ${req.params.cardId} не найдено`,
+        );
+        return;
       }
       OK_STATUS_CODE(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         BAD_REQUEST_ERROR_CODE(res, `Переданы некорректные данные: ${err}`);
+        return;
       }
       SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
     });

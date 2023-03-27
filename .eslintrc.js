@@ -5,7 +5,6 @@ module.exports = {
 
   },
   extends: [
-    'airbnb',
     'airbnb-base',
   ],
   overrides: [
@@ -16,14 +15,6 @@ module.exports = {
   },
   rules: {
     'no-underscore-dangle': ['error', { allow: ['_id'] }],
-    'no-console': 'off',
-    'no-restricted-syntax': [
-      'error',
-      {
-        selector: "CallExpression[callee.object.name='console'][callee.property.name!=/^(log|warn|error|info|trace)$/]",
-        message: 'Unexpected property on console object was called',
-      },
-    ],
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
-
 };
