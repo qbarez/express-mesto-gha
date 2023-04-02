@@ -10,7 +10,7 @@ const auth = (req, res, next) => {
   try {
     payload = jwt.verify(token.replace('Bearer ', ''), 'hardcoded-secret-key');
   } catch (err) {
-    next(new UnauthorizedError('Необходима авторизация'));
+    return next(new UnauthorizedError('Необходима авторизация'));
   }
   req.user = payload;
   return next();

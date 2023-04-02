@@ -37,7 +37,7 @@ const deleteCard = (req, res, next) => {
         throw new ForbiddenError('card');
       }
 
-      return card.remove();
+      return Card.findByIdAndRemove(req.params._id);
     })
     .then((card) => {
       res.status(StatusCode.OK_STATUS_CODE).send(cardResFormat(card));
@@ -51,7 +51,7 @@ const deleteCard = (req, res, next) => {
     });
 };
 
-const setCardLike = (req, res, next) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params._id,
     { $addToSet: { likes: req.user._id } },
@@ -70,7 +70,7 @@ const setCardLike = (req, res, next) => {
     });
 };
 
-const removeCardLike = (req, res, next) => {
+const dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params._id,
     { $pull: { likes: req.user._id } },
@@ -93,6 +93,6 @@ module.exports = {
   getCards,
   createCard,
   deleteCard,
-  setCardLike,
-  removeCardLike,
+  likeCard,
+  dislikeCard,
 };

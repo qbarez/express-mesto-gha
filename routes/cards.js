@@ -3,8 +3,8 @@ const {
   getCards,
   createCard,
   deleteCard,
-  setCardLike,
-  removeCardLike,
+  likeCard,
+  dislikeCard,
 } = require('../controllers/cards');
 const {
   createCardValidation,
@@ -17,8 +17,8 @@ cardsRouter.post('/', createCardValidation, createCard);
 
 cardsRouter.delete('/:_id', idValidation, deleteCard);
 
-cardsRouter.put('/:_id/likes', idValidation, setCardLike);
+cardsRouter.put('/:_id/likes', idValidation, likeCard);
 
-cardsRouter.delete('/:_id/likes', idValidation, removeCardLike);
+cardsRouter.delete('/:_id/likes', idValidation, dislikeCard);
 
 module.exports = cardsRouter;
