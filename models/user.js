@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     minlength: [2, 'Минимальная длина поля 2 символа'],
     maxlength: [30, 'Максимальная длина поля 30 символов'],
-    default: 'Исследователь океана',
+    default: 'Исследователь',
   },
 
   avatar: {
