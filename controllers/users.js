@@ -1,51 +1,93 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const {
-  OK_STATUS_CODE,
-  CREATED_STATUS_CODE,
-  BAD_REQUEST_ERROR_CODE,
-  NOT_FOUND_STATUS_CODE,
-  SERVER_ERROR_CODE,
-} = require('../utils/responseStatusCode');
+const { userResFormat } = require('../utils/utils');
+const { StatusCode } = require('../utils/constants');
+const NotFoundError = require('../utils/errors/notFoundError');
+const BadRequestError = require('../utils/errors/badRequestError');
+const ConflictError = require('../utils/errors/conflictError');
 
-const getUsers = (req, res) => {
-  User.find({})
-    .then((users) => OK_STATUS_CODE(res, users))
-    .catch((err) => SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`));
-};
-
-const getUserById = (req, res) => {
-  User.findById(req.params._id)
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) {
-        NOT_FOUND_STATUS_CODE(res, 'Запрашиваемый пользователь не найден');
-      }
-      return OK_STATUS_CODE(res, user);
+      const token = jwt.sign(
+        { _id: user._id },
+        'hardcoded-secret-key',
+        { expiresIn: '7d' },
+      );
+      res
+        .cookie('jwt', token, {
+          maxAge: 3600000 * 24 * 7,
+          httpOnly: true,
+        })
+        .status(StatusCode.OK_STATUS_CODE)
+        .send(userResFormat(user));
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        BAD_REQUEST_ERROR_CODE(res, 'Некорректный id пользователя');
-      } else {
-        SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
-      }
-    });
+    .catch(next);
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt
+    .hash(password, 10)
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
     .then((user) => {
-      CREATED_STATUS_CODE(res, user);
+      res.status(StatusCode.OK_STATUS_CODE).send(userResFormat(user));
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        BAD_REQUEST_ERROR_CODE(res, `Переданы некорректные данные: ${err}`);
-      } else {
-        SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
+        next(new BadRequestError());
+        return;
       }
+      if (err.code === 11000) {
+        next(new ConflictError('email'));
+        return;
+      }
+      next(err);
     });
 };
 
-const patchUserProfile = (req, res) => {
+const getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .orFail(new NotFoundError('user'))
+    .then((user) => {
+      res.status(StatusCode.OK_STATUS_CODE).send(userResFormat(user));
+    })
+    .catch(next);
+};
+
+const getUsers = (req, res, next) => {
+  User.find({})
+    .then((users) => users.map((user) => userResFormat(user)))
+    .then((users) => res.status(StatusCode.OK_STATUS_CODE).send(users))
+    .catch(next);
+};
+
+const getUserById = (req, res, next) => {
+  User.findById(req.params._id)
+    .orFail(new NotFoundError('user'))
+    .then((user) => {
+      res.status(StatusCode.OK_STATUS_CODE).send(userResFormat(user));
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError());
+        return;
+      }
+      next(err);
+    });
+};
+
+const patchUserProfile = (req, res, next) => {
   const { name, about } = req.body;
   const owner = req.user._id;
 
@@ -60,19 +102,20 @@ const patchUserProfile = (req, res) => {
       runValidators: true,
     },
   )
+    .orFail(new NotFoundError('user'))
     .then((user) => {
-      OK_STATUS_CODE(res, user);
+      res.status(StatusCode.OK_STATUS_CODE).send(userResFormat(user));
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        BAD_REQUEST_ERROR_CODE(res, `Переданы некорректные данные: ${err}`);
-      } else {
-        SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
+        next(new BadRequestError());
+        return;
       }
+      next(err);
     });
 };
 
-const patchUserAvatar = (req, res) => {
+const patchUserAvatar = (req, res, next) => {
   const { avatar } = req.body;
   const owner = req.user._id;
 
@@ -86,22 +129,25 @@ const patchUserAvatar = (req, res) => {
       runValidators: true,
     },
   )
+    .orFail(new NotFoundError('user'))
     .then((user) => {
-      OK_STATUS_CODE(res, user);
+      res.status(StatusCode.OK_STATUS_CODE).send(userResFormat(user));
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        BAD_REQUEST_ERROR_CODE(res, `Переданы некорректные данные: ${err}`);
-      } else {
-        SERVER_ERROR_CODE(res, `Внутренняя ошибка сервера: ${err}`);
+        next(new BadRequestError());
+        return;
       }
+      next(err);
     });
 };
 
 module.exports = {
+  login,
+  createUser,
   getUsers,
   getUserById,
-  createUser,
   patchUserProfile,
   patchUserAvatar,
+  getCurrentUser,
 };

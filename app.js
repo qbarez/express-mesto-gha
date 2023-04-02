@@ -1,15 +1,26 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { errors } = require('celebrate');
+const cookieParser = require('cookie-parser');
 const cardsRoutes = require('./routes/cards');
 const usersRoutes = require('./routes/users');
+const { auth } = require('./middlewares/auth');
 const {
-  NOT_FOUND_STATUS_CODE,
-} = require('./utils/responseStatusCode');
+  signInValidation,
+  signUpValidation,
+} = require('./middlewares/requetsValidation');
+const { errorsHandler } = require('./middlewares/errorsHandler');
+const { incorrectRouteHandler } = require('./middlewares/incorrectRouteHandler');
+const { login, createUser } = require('./controllers/users');
 
 const { PORT = 3000 } = process.env;
 const app = express();
+app.listen(PORT, () => {
+  console.warn(`App listening on port ${PORT}`);
+});
 
 app.use(express.json());
+
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
   .then(() => {
     console.warn('db connected');
@@ -18,22 +29,16 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb')
     console.error('db connection error');
   });
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '641a0ffa7d0c6b1852545644',
-  };
+app.use(cookieParser());
 
-  next();
-});
+app.post('/signin', signInValidation, login);
+app.post('/signup', signUpValidation, createUser);
+
+app.use(auth);
 
 app.use('/cards', cardsRoutes);
-
 app.use('/users', usersRoutes);
+app.use('*', incorrectRouteHandler);
 
-app.use('*', (req, res) => {
-  NOT_FOUND_STATUS_CODE(res, `Запрашиваемый ресурс ${req.path} не найден.`);
-});
-
-app.listen(PORT, () => {
-  console.warn(`App listening on port ${PORT}`);
-});
+app.use(errors());
+app.use(errorsHandler);
