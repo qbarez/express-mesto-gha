@@ -28,7 +28,7 @@ const createCard = (req, res, next) => {
 };
 
 const deleteCard = (req, res, next) => {
-  Card.findById(req.params.cardId)
+  Card.findById(req.params._id)
     .orFail(new NotFoundError('card'))
     .then((card) => {
       const currnetUserId = req.user._id;
